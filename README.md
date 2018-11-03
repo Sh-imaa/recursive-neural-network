@@ -88,6 +88,7 @@ If everything else fixed and we train the whole binary data-set with 6920 data p
 |   |   |   |
 --
 In the next table we show a comparison between the obtained speedup, the best possible speedup and the least possible speedup, for both the whole dataset and the shortest 700 sentences. As we can see the longer the sentence the higher the maximum and actual speedup we can reach, making the difference in performance more pronounced in the case of the full epoch (for 32 mins to 5 mins).
+
 |                                   |Full Epoch                           | Shortest 700 Sentence               |  
 |-----------------------------------|:-----------------------------------:|:-----------------------------------:|
 | Average length (n)                | $19$                                |$7$                                  |
@@ -125,6 +126,7 @@ root_indeces = tf.reshape(self.root_indeces_placeholder, [-1, 1])
 self.root_logits =  tf.gather_nd(self.logits, root_indeces)
 ``` 
 The following table is the running time for various batch size, including processing all the dataset at one go.
+
 Batch size | time 
 |:-----------:|:-------:|
 1 | 330 secs
