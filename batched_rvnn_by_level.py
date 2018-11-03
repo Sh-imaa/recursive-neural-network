@@ -148,26 +148,26 @@ class RecursiveNN(object):
 
         # add training op
         with tf.variable_scope('Train'):
-            self.train_op = tf.train.AdamOptimizer(self.config.lr).minimize(
+            self.train_op = tf.train.GradientDescentOptimizer(self.config.lr).minimize(
                 self.full_loss)
 
-        with tf.variable_scope('Summaries'):
-            total_loss_summary =  tf.summary.scalar('total_loss', self.full_loss)
-            root_loss_summary = tf.summary.scalar('root_loss', self.root_loss)
-            root_acc_summary = tf.summary.scalar('root_acc', self.root_acc)
+        # with tf.variable_scope('Summaries'):
+        #     total_loss_summary =  tf.summary.scalar('total_loss', self.full_loss)
+        #     root_loss_summary = tf.summary.scalar('root_loss', self.root_loss)
+        #     root_acc_summary = tf.summary.scalar('root_acc', self.root_acc)
 
-            tf.summary.histogram('W1', W1)
-            tf.summary.histogram('b1', b1)
-            tf.summary.histogram('U', U)
-            tf.summary.histogram('bs', bs)
-            tf.summary.histogram('Embeddings', embeddings)
+        #     tf.summary.histogram('W1', W1)
+        #     tf.summary.histogram('b1', b1)
+        #     tf.summary.histogram('U', U)
+        #     tf.summary.histogram('bs', bs)
+        #     tf.summary.histogram('Embeddings', embeddings)
 
-            tf.summary.image('W1', tf.expand_dims(tf.expand_dims(W1, 0), 3))
-            tf.summary.image('U', tf.expand_dims(tf.expand_dims(U, 0), 3))
+        #     tf.summary.image('W1', tf.expand_dims(tf.expand_dims(W1, 0), 3))
+        #     tf.summary.image('U', tf.expand_dims(tf.expand_dims(U, 0), 3))
 
-            self.merge_train_summaries = tf.summary.merge_all()
-            self.merge_val_summaries = tf.summary.merge(
-                [total_loss_summary, root_loss_summary, root_acc_summary])
+        #     self.merge_train_summaries = tf.summary.merge_all()
+        #     self.merge_val_summaries = tf.summary.merge(
+        #         [total_loss_summary, root_loss_summary, root_acc_summary])
 
     def generate_batch(self, train=True):
         # the generator is just to train batch by batch not to avoid storing
@@ -222,10 +222,10 @@ class RecursiveNN(object):
         random.shuffle(self.train_data)
         feed_dict_dev = self.build_feed_dict(self.dev_data)
         with tf.Session() as sess:
-            train_writer = tf.summary.FileWriter(os.path.join(
-                LOG_DIR, self.config.model_string, 'train'), sess.graph)
-            val_writer = tf.summary.FileWriter(os.path.join(
-                LOG_DIR, self.config.model_string, 'val'), sess.graph)
+            # train_writer = tf.summary.FileWriter(os.path.join(
+            #     LOG_DIR, self.config.model_string, 'train'), sess.graph)
+            # val_writer = tf.summary.FileWriter(os.path.join(
+            #     LOG_DIR, self.config.model_string, 'val'), sess.graph)
             if new_model:
                 sess.run(tf.global_variables_initializer())
             else:
@@ -235,21 +235,33 @@ class RecursiveNN(object):
             m = len(self.train_data)
             num_batches = int(m / self.config.batch_size) + 1
             batch_generator = self.generate_batch()
+            now = time.time()
             for batch in xrange(num_batches):
                 feed_dict = self.build_feed_dict(batch_generator.next())
-                loss_value, train_summary, acc, _ = sess.run(
-                    [self.full_loss, self.merge_train_summaries, self.root_acc, self.train_op],
+                # loss_value, train_summary, acc, _ = sess.run(
+                #     [self.full_loss, self.merge_train_summaries, self.root_acc, self.train_op],
+                #     feed_dict=feed_dict)
+                # loss_value, acc, _ = sess.run(
+                #     [self.full_loss, self.root_acc, self.train_op],
+                #     feed_dict=feed_dict)
+                loss_value, _ = sess.run(
+                    [self.full_loss, self.train_op],
                     feed_dict=feed_dict)
 
-                train_writer.add_summary(train_summary, num_batches * epoch + batch )
+
+                # train_writer.add_summary(train_summary, num_batches * epoch + batch )
                 # write val summary every 10 batches
-                if batch % 10 == 0:
-                    val_summary = sess.run(self.merge_val_summaries, feed_dict=feed_dict_dev)
-                    val_writer.add_summary(val_summary, (num_batches * epoch) + batch )
+                # if batch % 10 == 0:
+                #     val_summary = sess.run(self.merge_val_summaries, feed_dict=feed_dict_dev)
+                #     val_writer.add_summary(val_summary, (num_batches * epoch) + batch )
                 if verbose:
-                    sys.stdout.write('\r{} / {} :    loss = {} and acc = {}'.format(
-                        batch, num_batches, loss_value, acc))
+                    sys.stdout.write('\r{} / {} :    loss = {}'.format(
+                        batch, num_batches, loss_value))
                     sys.stdout.flush()
+            overall = time.time() - now
+            print '--------------------------'
+            print overall
+            print '--------------------------'
             saver = tf.train.Saver()
             if not os.path.exists(SAVE_DIR):
                 os.makedirs(SAVE_DIR)
@@ -280,6 +292,7 @@ class RecursiveNN(object):
                 train_acc, val_acc, train_loss, val_loss = self.run_epoch(epoch)
 
 
+
     def predict(self, trees, weights_path, get_loss=False):
         with tf.Session() as sess:
             saver = tf.train.Saver()
@@ -302,6 +315,6 @@ class RecursiveNN(object):
 train_data, dev_data, _ = tree.load_data_binary()
 random.shuffle(train_data)
 
-config = Config()
+config = Config(batch_size=len(train_data) + 1)
 model = RecursiveNN(config, train_data, dev_data)
 model.train()
