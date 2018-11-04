@@ -86,7 +86,6 @@ If everything else fixed and we train the whole binary data-set with 6920 data p
 |---------------------------------------------|:------:|:---------:|
 | Time for one Epoch (6920 sentences) in secs | 1940 secs ~ 32 mins |**330** secs ~ 5 mins |
 | Time for the shortest 700 sentences in secs | 7.1 secs |**3.3** secs|
-|   |   |   |
 
 
 In the next table we show a comparison between the obtained speedup, the best possible speedup and the least possible speedup, for both the whole dataset and the shortest 700 sentences. As we can see the longer the sentence the higher the maximum and actual speedup we can reach, making the difference in performance more pronounced in the case of the full epoch (for 32 mins to 5 mins).
