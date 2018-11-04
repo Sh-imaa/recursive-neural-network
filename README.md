@@ -6,7 +6,7 @@
 
 Recursive Neural Nets follows a tree structure recursively to build a consise representation of a sentence or a paragraph. That means that every sentence has its own tree structure, the result of its parsing. So, if we want to implement such model in TF, we have to build a graph serperatly and iteratively for each training sentence, which is very time consuming. Luckly TF provides tools for building flexible models. These tools are `tf.while_loop` , `tf.cond` and `tf.gather`. In [this github repo](https://github.com/bogatyy/cs224d/tree/master/assignment3), the author modified the naive implementation of RvNN to use `tf.while_loop` inside of TF graph structure to respresent the idea of a tree recursively rather than building a new model recursively  for every tree through a regural while loop. This made the code run x16 times faster. 
 
-In this project we'll improve it more, making it from 6X to 500X for various batching sizes from 1 to the full dataset, that makes it 16 *(6 or 500) faster than the naive implementation. Since each layer in the recursive tree is dependent on the previous layer but not dependent on other nodes in the same level, it makes sense to group tree operations by level, so that we can make compute several nodes in parallel. This can boost the performance by a factor up to $n / log_{2}(n)$, as a binary tree of $n$ nodes have at least $log_{2}(n)$ levels and at most $n$ levels, reflecting the two cases of a balanced binary tree, and RecurrentNN-like tree (each level link all the previous words with the next word in one node). The performance boost will show more in long sentences, since those, on average, will have higher factor of number of nodes to number of levels. For example, a sentence of length $m$ words, will have $2m - 1$ nodes and from $m$ to $log_{2}(m) + 1$ levels. So we hope that at least we get $(2m -1)/ m$ increase in performance  and at most  $(2m - 1)/( log_{2}(m) + 1)$ increase.  
+In this project we'll improve it more, making it from 6X to 500X for various batching sizes from 1 to the full dataset, that makes it 16 *(6 or 500) faster than the naive implementation. Since each layer in the recursive tree is dependent on the previous layer but not dependent on other nodes in the same level, it makes sense to group tree operations by level, so that we can make compute several nodes in parallel. This can boost the performance by a factor up to (n / log_2(n)), as a binary tree of n nodes have at least log_2(n) levels and at most n levels, reflecting the two cases of a balanced binary tree, and RecurrentNN-like tree (each level link all the previous words with the next word in one node). The performance boost will show more in long sentences, since those, on average, will have higher factor of number of nodes to number of levels. For example, a sentence of length m words, will have (2m - 1) nodes and from m to (log_2(m) + 1_ levels. So we hope that at least we get ((2m -1)/ m) increase in performance  and at most  (2m - 1)/( log_2(m) + 1) increase.  
 
 In order to implement the above idea we can break down the necessary steps into the following`:
 #### Step 1:
@@ -81,6 +81,7 @@ def combine_children(left_tensor, right_tensor):
 ```
 ### Results:
 If everything else fixed and we train the whole binary data-set with 6920 data points using both methods, the one mentioned here and the one mentioned in the github repo mentioned above, the following running time differences is obtained.
+
 |   |Static Graph (the repo solution) | Level-wise batches   |  
 |---------------------------------------------|:------:|:---------:|
 | Time for one Epoch (6920 sentences) in secs | 1940 secs ~ 32 mins |**330** secs ~ 5 mins |
@@ -91,11 +92,11 @@ In the next table we show a comparison between the obtained speedup, the best po
 
 |                                   |Full Epoch                           | Shortest 700 Sentence               |  
 |-----------------------------------|:-----------------------------------:|:-----------------------------------:|
-| Average length (n)                | $19$                                |$7$                                  |
-| Average number of levels          | $10$                                | $5$                                 |
-| Actual improving factor           | $1940/330 = 5.87$                   |  $7.1/3.3 = 2.15$                   |
-| Worst possible improving factor   | $(2n-1)/n = 1.94$                     |  $(2n-1)/n = 1.85$                    |
-| Best possible improving factor    | $(2n - 1)/( log_{2}(n) + 1) = 6.1$ | $(2n - 1)/( log_{2}(n) + 1) = 3.25$ |
+| Average length (n)                | 19                                |7                                  |
+| Average number of levels          | 10                                | 5                                 |
+| Actual improving factor           | 1940/330 = 5.87                   |  7.1/3.3 = 2.15                   |
+| Worst possible improving factor   | (2n-1)/n = 1.94                     |  (2n-1)/n = 1.85                   |
+| Best possible improving factor    | (2n - 1)/( log_{2}(n) + 1) = 6.1 | (2n - 1)/( log_{2}(n) + 1) = 3.25 |
 
 ------
 #### Step 3:
