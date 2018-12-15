@@ -68,7 +68,7 @@ def loop_body(tensor_array, i):
     i = tf.add(i, 1)
     return tensor_array, i
 ```
-Only `embed_words` will change to using `tf.gather_nd` instead of `tf.gather`, so we can read multiple embedding at once from the embedding matrix. `combine_children` won't need a change, it will just return a $d\times E$ tensor, where d is the number of nodes in a given level, instead of $1\times E$ representing a single word. 
+Only `embed_words` will change to using `tf.gather_nd` instead of `tf.gather`, so we can read multiple embedding at once from the embedding matrix. `combine_children` won't need a change, it will just return a d X E tensor, where d is the number of nodes in a given level, instead of 1 X E representing a single word. 
 ```python
 def embed_words(word_indeces):
     return tf.gather_nd(embeddings, word_indeces)
